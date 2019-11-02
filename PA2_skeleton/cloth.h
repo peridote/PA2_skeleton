@@ -17,7 +17,6 @@ public:
 	std::vector<Node *> nodes;
 	std::vector<mass_spring *> spring;
 	std::vector<Node*> faces;
-	std::vector<vec3> fNormals;
 	std::vector<vec3> facesRelPos;
 	int			size_x, size_y, size_z;
 	double		dx, dy, dz;
@@ -40,7 +39,6 @@ public:
 		nodes.clear();
 		spring.clear();
 		faces.clear();
-		fNormals.clear();
 	}
 	enum DrawModeEnum{
 		DRAW_MASS_NODES,
@@ -56,7 +54,7 @@ public:
 			for(int j = 0; j < size_y;j++)
 				for (int i = 0; i < size_x; i++)
 				{
-					Node* node = new Node(vec3(j, k+30, i-25));
+					Node* node = new Node(vec3(j, k+40, i-25));
 					nodes.push_back(node);
 				}
 		for(int k =0; k< size_z; k++)
@@ -104,7 +102,6 @@ public:
 					sp->spring_coef = bending_coef;
 					spring.push_back(sp);
 				}
-		int n = 0;
 		for (int k = 0; k < size_z; k++)
 			for (int j = 0; j < size_y-1; j++)
 				for (int i = 0; i < size_x-1; i++)
@@ -124,10 +121,7 @@ public:
 					/*faces.push_back(nodes[(size_y - j)*size_x - i - 1]);
 					faces.push_back(nodes[(size_y - j)*size_x - i - 2]);
 					faces.push_back(nodes[(size_y - j - 1)*size_x - i - 1]);*/
-					
-					n += 2;
 				}
-		fNormals.reserve(n);
 		nodes[size_x-1]->isFixed = true;
 		nodes[0]->isFixed = true;
 		//Additional Implements 1. Init Bending Spring
@@ -173,7 +167,6 @@ public:
 			faces[i]->normal += c;
 			faces[i+1]->normal += c;
 			faces[i+2]->normal += c;
-			fNormals[i / 3] = c;
 		}
 		for (int i = 0; i < nodes.size(); i++)
 		{
@@ -222,6 +215,41 @@ public:
 		{
 			nodes[i]->rk1(dt);
 		}
+		compute_force(dt, gravity);
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk2(dt);
+		}
+	}
+	void rk4(double dt, vec3 gravity)
+	{
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk1(dt/2);
+		}
+		compute_force(dt/2, gravity);
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk2(dt/2);
+		}
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk1(dt / 2);
+		}
+		compute_force(dt / 2, gravity);
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk2(dt / 2);
+		}
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk1(dt);
+		}
+		compute_force(dt, gravity);
+		for (int i = 0; i < nodes.size(); i++)
+		{
+			nodes[i]->rk2(dt);
+		}
 	}
 	void collision_response(vec3 ground, Sphere* sphere)
 	{
@@ -250,11 +278,14 @@ public:
 			vec3 lt = nodes[i]->position - sphere->position;
 			if (lt.length() < sphere->r + ground_offset)
 			{
-				lt = nodes[i]->position - sphere->position;
+				lt = (nodes[i]->position + nodes[i]->prepos) / 2;
+				lt = lt - sphere->position;
 				lt.Normalize();
-
-				nodes[i]->velocity = nodes[i]->velocity.length()*lt;
-				lt = nodes[i]->position - sphere->position;
+				vec3 vel = nodes[i]->velocity;
+				double d = lt.x*vel.x + lt.y*vel.y + lt.z*vel.z;
+				vec3 newvel = vec3(vel.x - 2 * lt.x*d, vel.y - 2 * lt.y*d, vel.z - 2 * lt.z*d);
+				nodes[i]->position = (nodes[i]->position + nodes[i]->prepos) / 2;
+				nodes[i]->velocity = newvel;
 				nodes[i]->integrate(0.01);
 			}
 		}

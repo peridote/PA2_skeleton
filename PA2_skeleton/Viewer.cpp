@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Viewer.h"
 #include "Windows.h"
+#include <GL/glm/glm.hpp>
 using namespace std;
 
 Viewer::Viewer(void)
@@ -95,23 +96,21 @@ void Viewer::Motion(int x, int y)
 		}
 		else if (interationMode)
 		{
-			vec3 force = vec3(0.3*diffx, -0.3*diffy, 0);
+			vec3 force = vec3(0.7*diffx, -0.7*diffy, 0);
+			float a = 1;
 			glPushMatrix();
 			glLoadIdentity();
 			GLfloat temp_matrix[16];
 			glRotatef(m_Rotate[0], 1.0, 0.0, 0.0);
 			glRotatef(-m_Rotate[1], 0.0, 1.0, 0.0);
 			glGetFloatv(GL_MODELVIEW_MATRIX, temp_matrix);
-			/*glTranslatef(0.0, 0.0, -m_Zoom);
-			glTranslatef(m_Translate[0], m_Translate[1], 0.0);
-			glGetFloatv(GL_MODELVIEW_MATRIX, temp_matrix);*/
 			glPopMatrix();
+			if (glm::cos(glm::radians(m_Rotate[0]))<0 && glm::sin(glm::radians(m_Rotate[1]))<0) force.x *= -1;
 			vec3 computedF = vec3();
 			computedF.x = temp_matrix[0] * force.x + temp_matrix[4] * force.y + temp_matrix[8] * force.z + temp_matrix[12] * 1;
 			computedF.y = temp_matrix[1] * force.x + temp_matrix[5] * force.y + temp_matrix[9] * force.z + temp_matrix[13] * 1;
 			computedF.z = temp_matrix[2] * force.x + temp_matrix[6] * force.y + temp_matrix[10] * force.z + temp_matrix[14] * 1;
-			
-			S_Simulator.cloth->add_impulse(computedF);
+			S_Simulator.cloth->add_force(computedF);
 			//Basic Implements 5. User Interaction
 		}
  	}

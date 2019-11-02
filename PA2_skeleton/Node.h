@@ -10,7 +10,7 @@ class Node
 {
 public:
 	double	mass;
-	vec3	impulseforce, constantforce;
+	vec3	impulseforce, constantforce, force;
 	vec3	position, prepos, rk1pos;
 	vec3	velocity, rk1vel;
 	vec3	acceleration, rk1acc;
@@ -21,6 +21,7 @@ public:
 	Node(void)
 	{
 		isFixed = false;
+		force.setZeroVector();
 		constantforce.setZeroVector();
 		impulseforce = vec3(0, 0, 0);
 		velocity = vec3(0, 0, 0);
@@ -33,6 +34,7 @@ public:
 	{
 		isFixed = false;
 		position = init_pos;
+		force.setZeroVector();
 		constantforce.setZeroVector();
 		impulseforce = vec3(0, 0, 0);
 		velocity = vec3(0, 0, 0);
@@ -52,7 +54,7 @@ public:
 
 	void add_force(vec3 additional_force)
 	{
-		constantforce += additional_force;
+		force += additional_force;
 	}
 	void add_impulse(vec3 force)
 	{
@@ -63,18 +65,14 @@ public:
 		prepos = position;
 		if (!isFixed)
 		{
-			acceleration = (constantforce+impulseforce) / mass;
+			acceleration = force / mass;
 			velocity += acceleration * dt;
-			position += velocity*dt;
-			rk1pos = position;
-			rk1vel = velocity;
-			rk1acc = acceleration;
+			position += velocity * dt;
 
 			//Basic Implements 2-2. Integration
 		}
 		/*initialize Force*/
-		constantforce.setZeroVector();
-		impulseforce.setZeroVector();
+		force.setZeroVector();
 	}
 	void rk1(double dt)
 	{
@@ -83,29 +81,25 @@ public:
 		{
 			rk1pos = position;
 			rk1vel = velocity;
-			acceleration = (constantforce + impulseforce) / mass;
+			acceleration = force / mass;
 			velocity += acceleration * dt;
+			position += velocity * dt;
 			rk1acc = acceleration;
-			acceleration = constantforce / mass;
-			position = rk1pos + (velocity + rk1vel) * dt / 2;
-			velocity = rk1vel + (acceleration + rk1acc) * dt / 2;
-
 
 		}
-		constantforce.setZeroVector();
-		impulseforce.setZeroVector();
+		force.setZeroVector();
 	}
-	//void rk2(double dt)
-	//{
-	//	if (!isFixed)
-	//	{
-	//		acceleration = force / mass;
-	//		position = rk1pos + (velocity+rk1vel) * dt / 2;
-	//		velocity = rk1vel + (acceleration + rk1acc) * dt / 2;
-	//	}
-	//	/*initialize Force*/
-	//	force.x = force.y = force.z = 0.0;
-	//}
+	void rk2(double dt)
+	{
+		if (!isFixed)
+		{
+			acceleration = force / mass;
+			position = rk1pos + (velocity+rk1vel) * dt / 2;
+			velocity = rk1vel + (acceleration + rk1acc) * dt / 2;
+		}
+		/*initialize Force*/
+		force.x = force.y = force.z = 0.0;
+	}
 
 	void draw();
 	void draw(Node* second, Node* third, std::vector<vec3>* facePos,int i);

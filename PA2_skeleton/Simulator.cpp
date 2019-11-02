@@ -18,7 +18,7 @@ void Simulator::Initialize()
 	timeStep = 0.01;
 	ground =vec3(0.0,-15,0.0);
 	sphere = new Sphere(vec3(0,0,0), 10);
-	const char* texname = "cc.jpg";
+	const char* texname = "frog.jpg";
 	LoadMeshFromFile((char*)texname, (char*)texname);
 	cloth = new mass_cloth();
 	//good
@@ -45,8 +45,9 @@ void Simulator::Update()
 	for (int iter = 0; iter < cloth->iteration_n; iter++)
 	{
 		cloth->compute_force(timeStep, gravity);
-		//cloth->integrate(timeStep);
-		cloth->rk2(timeStep, gravity);
+		cloth->integrate(timeStep);
+		//cloth->rk2(timeStep, gravity);
+		//cloth->rk4(timeStep, gravity);
 		cloth->collision_response(ground, sphere);
 	}
 

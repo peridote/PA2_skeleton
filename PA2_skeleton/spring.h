@@ -40,8 +40,8 @@ public:
 		// node1->add_force(force);
 		// node2->add_force(force);
 		vec3 force = normal * (spring_coef*(length - initial_length) + damping_coef * (p2->velocity - p1->velocity).dot(normal));
-		p2->add_impulse(-1.0 * force);
-		p1->add_impulse(force);
+		p2->add_force(-1.0 * force);
+		p1->add_force(force);
 	}
 	void draw();
 
